@@ -1,6 +1,6 @@
 //'use strict'
  
-module Bonziri {
+namespace Bonziri {
     
     export interface Labeled {
         label: string
