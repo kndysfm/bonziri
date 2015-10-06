@@ -1,0 +1,157 @@
+{
+	"resources": {
+		"imageFiles": {
+			"cast-1": {
+				"url": "./assets/img/cast-1_400x400x2.png",
+				"width": 400, "height": 400, "frames": 2 },
+			"diff-1": {
+				"url": "./assets/img/diff-1_400x400x2.png", 
+				"width": 400, "height": 400, "frames": 2 },
+			"cast-2": {
+				"url": "./assets/img/cast-2_400x400x2.png",
+				"width": 400, "height": 400, "frames": 2 },
+			"diff-2": {
+				"url": "./assets/img/diff-2_400x400x2.png", 
+				"width": 400, "height": 400, "frames": 2 },
+			"background-1": {
+				"url": "./assets/img/bg-1_800x450x1.jpg",
+				"width": 800, "height": 450, "frames": 1 },
+			"background-2": {
+				"url": "./assets/img/bg-2_800x450x1.jpg",
+				"width": 800, "height": 450 }
+		},
+		"audioFiles": {
+			"bgm": { "url": "./assets/mp3/bgm.mp3" }
+		}
+	},
+	
+	"effects": {
+		"animations": {
+			"NONE": {},
+			"CONSTANT": {
+				"fps": 8, "loop": true, "delay": 0, "randomDelay": false},
+			"RANDOM": {
+				"fps": 4, "loop": true, "delay": 5000, "randomDelay": true}
+		},
+		"tweens": {
+			"NONE": {},
+			"FADE_IN":{
+				"to": {"alpha": 1},
+				"duration": 500},
+			"FADE_OUT":{
+				"to": {"alpha": 0},
+				"duration": 500}	
+		}	
+	},
+	
+	"stuff": {
+		"sprites": {
+			"c1": {
+				"image": "cast-1", "animation": "RANDOM" },
+			"c1_1": {
+				"image": "diff-1", "animation": "CONSTANT" },
+			"c2": {
+				"image": "cast-2", "animation": "RANDOM" },
+			"c2_1": {
+				"image": "diff-2", "animation": "CONSTANT" },
+			"bg1": {
+				"image": "background-1", "animation": "NONE" },
+			"bg2": {
+				"image": "background-2"}
+		},
+		"textBoxes": {
+			
+		},
+		"sounds": {
+			"BGM": {
+				"audio": "bgm",
+				"volume": 0.5,
+				"loop": true,
+				"fade": true,
+				"duration": 250
+			}
+		},
+		
+		"actions": {
+			"HIDE": {"set": {"visible": false, "alpha": 0} },
+			"SHOW": {"set": {"visible": true, "alpha": 1} },
+			"FADE_IN": {"set": {"visible": true, "alpha": 0}, "tween": "FADE_IN"},
+			"FADE_OUT": {"tween": "FADE_OUT"},
+			"SOUND_PLAY": {"sound": "_PLAY_"},
+			"SOUND_STOP": {"sound": "_STOP_"}
+		}
+	},
+
+	"casts": {
+		"_PLAYER_": {
+			"name": "@[playerName]"},
+		"_SCENE_": {
+			"sprites": ["bg1", "bg2"], "sounds": ["BGM"]},
+		"A": {
+			"name": "NameA", "sprites": ["c1", "c1_1"], "sounds": []},
+		"B": {
+			"name": "NameB", "sprites": ["c2", "c2_1"], "sounds": []}
+	},
+		
+	"lines": [
+		{ "cast": "_SCENE_", "caption": {
+			"name": "Unknown", "speed": 10, 
+			"text": "_SCENE_ は背景画像とか、BGMとか、地の文とか"}},
+		{ "label": "start",
+			"cast": "_SCENE_", "action": "SHOW", "target": "_GROUP_"},
+		["_SCENE_", ["背景画像を表示"]],
+		{ "cast": "_SCENE_", "action": "SHOW", "target": "_SPRITE_",
+			"sprites":[0]},
+		"別の背景をフェードイン",
+		{ "action": "FADE_IN", "target": "_SPRITE_",
+			"sprites":["bg2"]},
+		"そしてフェードアウト",
+		{ "cast": "_SCENE_", "action": "FADE_OUT", "target": "_SPRITE_",
+			"sprites":[1]},
+		"cast Aがフェードイン",
+		{ "cast": "A", "action": "SHOW", "target": "_SPRITE_", "sprites":[0, 1]},
+		[ "A", {"set": {"x": -200}}],
+		{ "label": "A fade in", "cast": "A", "action": "FADE_IN"},
+		"即フェードアウト",
+		[ "A", "FADE_OUT"],
+		"一旦非表示",
+		[ "A", "HIDE"],
+		
+		"さらに別のcastを表示",
+		{ "cast": "B", "action": "SHOW", "target": "_SPRITE_", "sprites":0},
+		[ "B", {"set": {"x": 200}}],
+		{ "cast": "B", "action": {"set": {"visible": true}, "tween": {"to": {"alpha": 1}}}},
+		
+		"もっかい表示",
+		[ "A", "SHOW"],
+		{ "cast": "A", "caption": {
+			"name": "Unknown", "speed": 10, 
+			"text": "テキスト表示方法(1)"}},
+		{ "cast": "A", "caption": "テキスト表示方法(2)" },
+		[ "A", ["テキスト表示方法(3)", "Arrayをつかって", "表示させます"]],
+		"テキスト表示方法(4)",
+		
+		{"label": "loop1"},
+		{ "cast": "A", "caption": {
+			"text": [
+				"指定行へのジャンプも可能(にしたい)", 
+				["戻る", "loop1"],
+				["進む", "break1"] ] } },
+		{"label": "break1"},
+		
+		[["loop2"]],
+		[ "A", [
+				"ラベルのみの行の簡易表記", 
+				["Yes!", "loop2"],
+				["No!", "break2"] ] ],
+		[["break2"]],
+		
+		[ "A", {"tween": {"to": {"x":400, "alpha": 0}, "duration": 2000}}],
+		
+		{ "label": "start",
+			"cast": "_SCENE_", "action": "HIDE", "target": "_GROUP_"},
+
+		[ "B", "FADE_OUT"],
+		"おしまい"
+	]
+}
