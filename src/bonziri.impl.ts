@@ -2,6 +2,38 @@
 //'use strict'
 
 namespace Bonziri {
+	namespace Is {
+		
+		function _type (name:string) :(x:any) => boolean {
+			return (x:any) => typeof x === name;
+		}
+		
+		export var obj = _type('object');
+
+		export var num = _type('number');
+
+		export var str = _type('string');
+		
+		export var bool = _type('boolean');
+
+		export var arr = Array.isArray;
+
+	}
+	
+	namespace In {
+		function _val<T> (): (obj:any, name:string, defaultVal:T) => T {
+			return (obj:any, name:string, defaultVal:T) => name in obj? obj[name]: defaultVal;
+		}
+		
+		export var num = _val<number>();
+
+		export var str = _val<string>();
+
+		export var bool = _val<boolean>();
+
+		export var obj = _val<any>();
+	}
+	
 	export namespace Impl {
  
  		class Image implements ImageFile {
@@ -13,10 +45,10 @@ namespace Bonziri {
 	
 			constructor(label: string, obj: any) {
 				this.label = label;
-				this.url = ('url' in obj)? obj['url']: '';            
-				this.width = ('width' in obj)? obj['width']: 1;            
-				this.height = ('height' in obj)? obj['height']: 1;            
-				this.frames = ('frames' in obj)? obj['frames']: 1;           
+				this.url = In.str(obj, 'url', '');            
+				this.width = In.num(obj, 'width', 1);            
+				this.height = In.num(obj, 'height', 1);            
+				this.frames = In.num(obj, 'frames', 1);           
 			}
 		}
 		
@@ -26,7 +58,7 @@ namespace Bonziri {
 			
 			constructor(label: string, obj: any) {
 				this.label = label;
-				this.url = ('url' in obj)? obj['url']: '';
+				this.url = In.str(obj, 'url', '');
 			}            
 		}
 		
@@ -39,10 +71,10 @@ namespace Bonziri {
 			
 			constructor(label: string, obj: any) {
 				this.label = label;
-				this.fps = ('fps' in obj)? obj['fps']: 60;
-				this.loop = ('loop' in obj)? obj['loop']: true;
-				this.delay = ('delay' in obj)? obj['delay']: 0;
-				this.randomDelay = ('randomDelay' in obj)? obj['randomDelay']: false;
+				this.fps = In.num(obj, 'fps', 60);
+				this.loop = In.bool(obj, 'loop', true);
+				this.delay = In.num(obj, 'delay', 0);
+				this.randomDelay = In.bool(obj, 'randomDelay', false);
 			}        
 		}
 		
@@ -53,9 +85,9 @@ namespace Bonziri {
 			duration: number;
 			constructor(label: string, obj: any) {
 				this.label = label;
-				this.from = ('from' in obj)? obj['from']: {};
-				this.to = ('to' in obj)? obj['to']: {};
-				this.duration = ('duration' in obj)? obj['duration']: 1000;
+				this.from = In.obj(obj, 'from', {});
+				this.to = In.obj(obj, 'to', {});
+				this.duration = In.num(obj, 'duration', 1000);
 			}
 		}
 	
@@ -95,11 +127,11 @@ namespace Bonziri {
 				} else {
 					this.audio = null;
 				}
-				this.volume = ('volume' in obj)? obj['volume']: 1;
-				this.loop = ('loop' in obj)? obj['loop']: false;
-				this.fadeIn = ('fadeIn' in obj)? obj['fadeIn']: false;
-				this.fadeOut = ('fadeOut' in obj)? obj['fadeOut']: false;
-				this.duration = ('duration' in obj)? obj['duration']: 0;
+				this.volume = In.num(obj, 'volume', 1);
+				this.loop = In.bool(obj, 'loop', false);
+				this.fadeIn = In.bool(obj, 'fadeIn', false);
+				this.fadeOut = In.bool(obj, 'fadeOut', false);
+				this.duration = In.num(obj, 'duration', 0);
 			}
 		}
 		
@@ -111,7 +143,7 @@ namespace Bonziri {
 			
 			constructor(label: string, obj: any, ef: Effects) {
 				this.label = label;
-				this.set = ('set' in obj)? obj['set']: {};
+				this.set = In.obj(obj, 'set', {});
 				if ('tween' in obj && obj['tween'] in ef.tweens) {
 					this.tween = ef.tweens[obj['tween']];
 				} else {
@@ -136,10 +168,10 @@ namespace Bonziri {
 	
 			constructor(label: string, obj: any, stuff:Stuff) {
 				this.label = label;
-				this.name = ('name' in obj)? obj['name']: '';
+				this.name = In.str(obj, 'name', '');
 				
 				this.sprites = [];
-				if ('sprites' in obj && Array.isArray(obj['sprites'])) {
+				if ('sprites' in obj && Is.arr(obj['sprites'])) {
 					let labels = <string[]> obj['sprites'];
 					for (let i = 0; i < labels.length; i+=1) {
 						let l = labels[i];
@@ -148,7 +180,7 @@ namespace Bonziri {
 				}
 	
 				this.sounds = [];
-				if ('sounds' in obj && Array.isArray(obj['sounds'])) {
+				if ('sounds' in obj && Is.arr(obj['sounds'])) {
 					let labels = <string[]> obj['sounds'];
 					for (let i = 0; i < labels.length; i+=1) {
 						let l = labels[i];
@@ -164,10 +196,10 @@ namespace Bonziri {
 				public text: string,
 				public line_label: string
 			) { 
-				if (typeof this.text !== 'string') {
+				if (!Is.str(this.text)) {
 					throw `[lines:${idx}] link text is ${typeof this.text}`
 				}
-				if (typeof this.line_label !== 'string') {
+				if (!Is.str(this.line_label)) {
 					throw `[lines:${idx}] label of linker destination is ${typeof this.line_label}`
 				}
 			}
@@ -221,10 +253,10 @@ namespace Bonziri {
 			}
 			
 			private _setSprites(idx: number, cast:Cast, arg:any) {
-				if (Array.isArray(arg)) {
+				if (Is.arr(arg)) {
 					let ids = <(number|string)[]>arg;
 					for (let i = 0; i < ids.length; i+=1) {
-						if (typeof ids[i] === 'string') {
+						if (Is.str(ids[i])) {
 							let found = false;
 							for (let j = 0; j < cast.sprites.length; j++) {
 								if (cast.sprites[j].label == ids[i]) {
@@ -235,7 +267,7 @@ namespace Bonziri {
 							if (!found) {
 								throw `[lines:${idx}] cast ${cast.label} does not have sprite ${ids[i]}`;
 							}
-						} else if (typeof ids[i] === 'number') {
+						} else if (Is.num(ids[i])) {
 							let n = <number>ids[i];
 							if (n < cast.sprites.length) {
 								this.sprites.push(cast.sprites[n]);
@@ -246,14 +278,14 @@ namespace Bonziri {
 							throw `[lines:${idx}] there is such a sprite ${ids[i]}`;
 						}
 					}
-				} else if (typeof arg === 'number') {
+				} else if (Is.num(arg)) {
 					let n = <number>arg;
 					if (n < cast.sprites.length) {
 						this.sprites.push(cast.sprites[n]);
 					} else {
 						throw `[lines:${idx}] ${cast.label}.sprites.length <= ${n}`;
 					}
-				} else if (typeof arg === 'string') {
+				} else if (Is.str(arg)) {
 					let found = false;
 					for (let j = 0; j < cast.sprites.length; j++) {
 						if (cast.sprites[j].label == arg) {
@@ -270,10 +302,10 @@ namespace Bonziri {
 			}
 			
 			private _setSounds(idx: number, cast:Cast, arg:any) {
-				if (Array.isArray(arg)) {
+				if (Is.arr(arg)) {
 					let ids = <(number|string)[]>arg;
 					for (let i = 0; i < ids.length; i+=1) {
-						if (typeof ids[i] === 'string') {
+						if (Is.str(ids[i])) {
 							let found = false;
 							for (let j = 0; j < cast.sounds.length; j++) {
 								if (cast.sounds[j].label == ids[i]) {
@@ -284,7 +316,7 @@ namespace Bonziri {
 							if (!found) {
 								throw `[lines:${idx}] cast ${cast.label} does not have sound ${ids[i]}`;
 							}
-						} else if (typeof ids[i] === 'number') {
+						} else if (Is.num(ids[i])) {
 							let n = <number>ids[i];
 							if (n < cast.sounds.length) {
 								this.sounds.push(cast.sounds[n]);
@@ -295,14 +327,14 @@ namespace Bonziri {
 							throw `[lines:${idx}] there is such a sound ${ids[i]}`;
 						}
 					}
-				} else if (typeof arg === 'number') {
+				} else if (Is.num(arg)) {
 					let n = <number>arg;
 					if (n < cast.sounds.length) {
 						this.sounds.push(cast.sounds[n]);
 					} else {
 						throw `[lines:${idx}] ${cast.label}.sounds.length <= ${n}`;
 					}
-				} else if (typeof arg === 'string') {
+				} else if (Is.str(arg)) {
 					let found = false;
 					for (let j = 0; j < cast.sounds.length; j++) {
 						if (cast.sounds[j].label == arg) {
@@ -319,21 +351,21 @@ namespace Bonziri {
 			}
 			
 			private _setCaptionText(idx: number, arg:any) {
-				if (Array.isArray(arg)) {
+				if (Is.arr(arg)) {
 					let src = <(string|string[])[]>arg;
 					if (src.length == 1) {
-						if (typeof src[0] == 'string') {
+						if (Is.str(src[0])) {
 							this.caption.text = src[0];
-						} else if (Array.isArray(src[0])) {
+						} else if (Is.arr(src[0])) {
 							let lt = new LinkText(idx, src[0][0], src[0][1]);
 							this.caption.text = lt;
 						}
 					} else if (src.length > 1) {
 						let dst: (string|LinkText)[] = [];
 						for (let i = 0; i < src.length; i++) {
-							if (typeof src[i] === 'string') {
+							if (Is.str(src[i])) {
 								dst.push(<string>src[i]);
-							} else if (Array.isArray(src[i])) {
+							} else if (Is.arr(src[i])) {
 								let lt = new LinkText(idx, src[i][0], src[i][1]);
 								dst.push(lt);
 							} else {
@@ -344,7 +376,7 @@ namespace Bonziri {
 					} else {
 						throw `[lines:${idx}] there is no text`;
 					}
-				} else if (typeof arg === 'string') {
+				} else if (Is.str(arg)) {
 					this.caption.text = arg;
 				}
 			}
@@ -364,7 +396,7 @@ namespace Bonziri {
 				this.sounds = [];
 				this.caption = null;
 	
-				if (Array.isArray(obj)) {
+				if (Is.arr(obj)) {
 					/**
 					* example:
 					* [ "A", "FADE_OUT"],
@@ -384,12 +416,12 @@ namespace Bonziri {
 						this.caption = new Caption(idx, "", 5, null);
 					}
 					
-					if (typeof obj[0] === 'string') {
+					if (Is.str(obj[0])) {
 						/// [ "A", "FADE_OUT"],
 						this._setCast(idx, casts, obj[0]);
-					} else if (Array.isArray(obj[0])) {
+					} else if (Is.arr(obj[0])) {
 						/// [["loop2"]],
-						if (typeof obj[0][0] === 'string') {
+						if (Is.str(obj[0][0])) {
 							this.label = obj[0][0];
 						} else {
 							throw `[line:${idx}]2D array means label of Line`;
@@ -398,11 +430,11 @@ namespace Bonziri {
 						return; // EOL
 					}
 					
-					if (typeof obj[1] === 'string') {
+					if (Is.str(obj[1])) {
 						/// [ "A", "FADE_OUT"],
 						this._setAction(idx, stuff.actions, obj[1]);
 						return; // EOL
-					} else if (Array.isArray(obj[1])) {
+					} else if (Is.arr(obj[1])) {
 						///[ "A", ["Loop?", ["Yes!", "loop2"], ["No!", "break2"] ] ],
 						// update caption
 						this._setCaptionText(idx, obj[1]);
@@ -412,8 +444,8 @@ namespace Bonziri {
 						this.action = new Action('', obj[1], ef);
 						return; // EOL
 					}
-					/// end of Array.isArray(obj)
-				} else if (typeof obj === 'string') {
+					/// end of Is.arr(obj)
+				} else if (Is.str(obj)) {
 					if (lastLine && lastLine.cast && lastLine.caption) {
 						this.cast = lastLine.cast;
 						this.caption = new Caption( idx,
@@ -427,20 +459,20 @@ namespace Bonziri {
 				else if (typeof obj == 'object') {
 					if (!('label' in obj)) {
 						this.label = '';
-					} else if (typeof obj['label'] === 'string') {
+					} else if (Is.str(obj['label'])) {
 						this.label = <string>obj['label'];
 					}
 					
 					if (!('cast' in obj)) {
 						this._setCast(idx, casts, '_SCENE_');
-					} else if (typeof obj['cast'] === 'string') {
+					} else if (Is.str(obj['cast'])) {
 						this._setCast(idx, casts, obj['cast']);
 					} else {
 						throw `[Line:${idx}]"cast" should be string`;
 					}
 					
 					if ('action' in obj) {
-						if (typeof obj['action'] === 'string') {
+						if (Is.str(obj['action'])) {
 							this._setAction(idx, stuff.actions, obj['action']);
 						} else {
 							this.action = new Action('', obj['action'], ef); //literal in JSON
@@ -451,7 +483,7 @@ namespace Bonziri {
 					
 					if (!('target' in obj)) {
 						this._setTarget(idx, '_GROUP_');
-					} else if (typeof obj['target'] === 'string') {
+					} else if (Is.str(obj['target'])) {
 						this._setTarget(idx, obj['target']);
 					}
 					if ('sprites' in  obj) {
@@ -461,8 +493,8 @@ namespace Bonziri {
 						this._setSounds(idx, this.cast, obj['sounds']);
 					}
 					if ('caption' in obj) {
-						if (typeof obj['caption'] === 'string' ||
-							Array.isArray(obj['caption'])) {
+						if (Is.str(obj['caption']) ||
+							Is.arr(obj['caption'])) {
 							if ('cast' in obj) {
 								this.caption = new Caption( idx,
 									this.cast.name,
@@ -593,7 +625,7 @@ namespace Bonziri {
 					}
 				} else throw `define 'casts'`;
 	
-				if ('lines' in this._obj && Array.isArray(this._obj['lines'])) {
+				if ('lines' in this._obj && Is.arr(this._obj['lines'])) {
 					let ls = <any[]>this._obj['lines'];
 					for (let idx = 0; idx < ls.length; idx += 1) {
 						let l = new Line(idx, ls[idx], this);
