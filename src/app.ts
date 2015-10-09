@@ -8,7 +8,7 @@ var jsonText = ""
 function JsonRequestListener () {
     let txt: string = this.responseText;
     
-    let d = new Director('gameContent', _B.generateScenario(txt));
+    let d = new Game.Director('gameContent', Bonziri.generateScenario(txt));
     
     let el:JQuery = $('#inputText');
     el.val(txt);
