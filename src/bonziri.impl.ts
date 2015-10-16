@@ -20,7 +20,7 @@ namespace Bonziri {
 
 	}
 	
-	namespace In {
+	namespace Has {
 		function _val<T> (): (obj:any, name:string, defaultVal:T) => T {
 			return (obj:any, name:string, defaultVal:T) => name in obj? obj[name]: defaultVal;
 		}
@@ -45,10 +45,10 @@ namespace Bonziri {
 	
 			constructor(label: string, obj: any) {
 				this.label = label;
-				this.url = In.str(obj, 'url', '');            
-				this.width = In.num(obj, 'width', 1);            
-				this.height = In.num(obj, 'height', 1);            
-				this.frames = In.num(obj, 'frames', 1);           
+				this.url = Has.str(obj, 'url', '');            
+				this.width = Has.num(obj, 'width', 1);            
+				this.height = Has.num(obj, 'height', 1);            
+				this.frames = Has.num(obj, 'frames', 1);           
 			}
 		}
 		
@@ -58,7 +58,7 @@ namespace Bonziri {
 			
 			constructor(label: string, obj: any) {
 				this.label = label;
-				this.url = In.str(obj, 'url', '');
+				this.url = Has.str(obj, 'url', '');
 			}            
 		}
 		
@@ -71,10 +71,10 @@ namespace Bonziri {
 			
 			constructor(label: string, obj: any) {
 				this.label = label;
-				this.fps = In.num(obj, 'fps', 60);
-				this.loop = In.bool(obj, 'loop', true);
-				this.delay = In.num(obj, 'delay', 0);
-				this.randomDelay = In.bool(obj, 'randomDelay', false);
+				this.fps = Has.num(obj, 'fps', 60);
+				this.loop = Has.bool(obj, 'loop', true);
+				this.delay = Has.num(obj, 'delay', 0);
+				this.randomDelay = Has.bool(obj, 'randomDelay', false);
 			}        
 		}
 		
@@ -85,9 +85,9 @@ namespace Bonziri {
 			duration: number;
 			constructor(label: string, obj: any) {
 				this.label = label;
-				this.from = In.obj(obj, 'from', {});
-				this.to = In.obj(obj, 'to', {});
-				this.duration = In.num(obj, 'duration', 1000);
+				this.from = Has.obj(obj, 'from', null);
+				this.to = Has.obj(obj, 'to', null);
+				this.duration = Has.num(obj, 'duration', 1000);
 			}
 		}
 	
@@ -127,11 +127,11 @@ namespace Bonziri {
 				} else {
 					this.audio = null;
 				}
-				this.volume = In.num(obj, 'volume', 1);
-				this.loop = In.bool(obj, 'loop', false);
-				this.fadeIn = In.bool(obj, 'fadeIn', false);
-				this.fadeOut = In.bool(obj, 'fadeOut', false);
-				this.duration = In.num(obj, 'duration', 0);
+				this.volume = Has.num(obj, 'volume', 1);
+				this.loop = Has.bool(obj, 'loop', false);
+				this.fadeIn = Has.bool(obj, 'fadeIn', false);
+				this.fadeOut = Has.bool(obj, 'fadeOut', false);
+				this.duration = Has.num(obj, 'duration', 0);
 			}
 		}
 		
@@ -143,7 +143,7 @@ namespace Bonziri {
 			
 			constructor(label: string, obj: any, ef: Effects) {
 				this.label = label;
-				this.set = In.obj(obj, 'set', {});
+				this.set = Has.obj(obj, 'set', null);
 				if ('tween' in obj && obj['tween'] in ef.tweens) {
 					this.tween = ef.tweens[obj['tween']];
 				} else {
@@ -168,7 +168,7 @@ namespace Bonziri {
 	
 			constructor(label: string, obj: any, stuff:Stuff) {
 				this.label = label;
-				this.name = In.str(obj, 'name', '');
+				this.name = Has.str(obj, 'name', '');
 				
 				this.sprites = [];
 				if ('sprites' in obj && Is.arr(obj['sprites'])) {

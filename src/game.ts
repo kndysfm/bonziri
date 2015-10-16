@@ -216,8 +216,10 @@ namespace Game {
         }
         
         private _executeAction(a:_B.Action, obj:any) {
-            this._copyActionObject(obj, a.set, false);
-    
+            if (a.set) {
+                this._copyActionObject(obj, a.set, false);
+            }
+            
             if (a.tween) {
                 let tween = this._game.add.tween(obj);
                 let from:any = {};
