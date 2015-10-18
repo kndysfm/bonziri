@@ -25,35 +25,51 @@ namespace Game {
     }
     
     class SpeakPacer {
-        private _message: string;
+        private _message: string[];
         private _position: number;
         private _charPerFrame: number;
+        private _currentIndex: number;
     
-        constructor(msg: string, speed: number = 5, fps: number = 60.0) {
+        constructor(msg: string[], speed: number = 5, fps: number = 60.0) {
             this._position = 0;
             this._message = msg;
             this._charPerFrame = speed / fps;
+            this._currentIndex = 0;
         }
     
         update() {
-            if (this._position < this._message.length)
+            let currText = this._message[this._currentIndex];
+            if (this._position < currText.length) {
                 this._position += this._charPerFrame;
+            } else if (this._currentIndex < this._message.length - 1) {
+                this._currentIndex += 1;
+                this._position = 0;
+            } 
         }
     
         getText(): string {
-            return this._message.slice(0, this._position);
+            let currText = this._message[this._currentIndex];
+            return currText.slice(0, this._position);
         }
     
         isSpeaking(): boolean {
-            return this._position < this._message.length;
+            let currText = this._message[this._currentIndex];
+            return this._currentIndex < this._message.length - 1 ||
+                this._position < currText.length;
         }
     
         reset() {
+            this._currentIndex = 0;
             this._position = 0;
+        }
+        
+        getCurrentIndex(): number {
+            return this._currentIndex;
         }
     }
     
     class CastManager {
+        private _director: Director;
         private _game: _P.Game;
         private _scenario: _B.Scenario;
         private _cast: _B.Cast;
@@ -69,9 +85,11 @@ namespace Game {
         
         private _tween:_P.Tween;
         
-        public textBox:_P.Text;
+        public textBoxes: _P.Text[];
+        private _showingLink:boolean = false;
         
-        constructor(g: _P.Game, s: _B.Scenario, c:_B.Cast) {
+        constructor(d: Director, g: _P.Game, s: _B.Scenario, c:_B.Cast) {
+            this._director = d;
             this._game = g;
             this._scenario = s;
             this._cast = c;
@@ -115,7 +133,7 @@ namespace Game {
                 this._sounds[cfg.label] = {config:cfg, sound:snd};
             }
             this._tweening = this._speaking = false;
-            this.textBox = null;
+            this.textBoxes = null;
     
         }
         
@@ -151,23 +169,43 @@ namespace Game {
             this._group.destroy();        
         }
         
+        private _resetTextBoxes() {
+            for (let i = 0; i < this.textBoxes.length; i++) {
+                this.textBoxes[i].text = '';
+                this.textBoxes[i].inputEnabled = false;
+                this.textBoxes[i].events.onInputUp.removeAll();
+            }
+            this._showingLink = false;
+        }
+        
+        private _genJumpListener(label:string):Function {
+            return ()=>this._director.jumpToLine(label);
+        }
+        
         private _speak(cap:_B.Caption) {
             if (cap && cap.text) {
-                let text: string;
+                let text: string[] = [];
                 if (Array.isArray(cap.text)) {
-                    text = '';
                     let arr = <(string|_B.LinkText)[]>cap.text;
+                    let link: _B.LinkText;
                     for (let i = 0; i < arr.length; i++) {
                         if (typeof arr[i] === 'string') {
-                            text += arr[i] + '\n';
+                            text[i] = <string>arr[i];
                         } else { // LinkText
-                            text += (<_B.LinkText>arr[i]).text + '\n';
+                            link = <_B.LinkText>arr[i];
+                            text[i] = link.text;
+                            if (i >= this.textBoxes.length) {
+                                throw `out of index of textBoxes`;
+                            }
+                            this.textBoxes[i].inputEnabled = true;
+                            this.textBoxes[i].events.onInputUp.add(this._genJumpListener(link.line_label));
+                            this._showingLink = true;
                         }
                     }
                 } else if (typeof cap.text === 'string') {
-                    text = <string>cap.text;
+                    text[0] = <string>cap.text;
                 } else {
-                    text = (<_B.LinkText>cap.text).text;
+                    text[0] = (<_B.LinkText>cap.text).text;
                 }
                 this._pacer = new SpeakPacer(text, cap.speed, this._game.time.desiredFps);
             }
@@ -182,12 +220,13 @@ namespace Game {
                 if (this._game.input.activePointer.isDown) {
                     this._pacer.update(); // double speed
                 }
-                if (this.textBox){
-                    this.textBox.text = this._pacer.getText();
+                let idx = this._pacer.getCurrentIndex();
+                if (this.textBoxes && idx < this.textBoxes.length){
+                    this.textBoxes[idx].text = this._pacer.getText();
                 }
                 return true; // continue current line
             } else {
-                return !this._game.input.activePointer.isDown;
+                return this._showingLink || !this._game.input.activePointer.isDown;
             }
         }
         
@@ -304,7 +343,8 @@ namespace Game {
                     break;
                 }
             }
-                    
+            
+            this._resetTextBoxes();
             this._speak(l.caption);
         }
         
@@ -377,13 +417,19 @@ namespace Game {
             let casts = this._scenario.casts;
             for (let l in casts){
                 let c = casts[l];
-                let man = new CastManager(this._game, this._scenario, c);
+                let man = new CastManager(this, this._game, this._scenario, c);
                 this._castMans[c.label] = man;
             }
             // give text-box to display text
-            let t = this._game.add.text(16, Config.castOriginY, '', { fontSize: '32px', fill: '#EEE' });
+            let tbs : _P.Text[] = [];
+            tbs[0] = this._game.add.text(16, Config.castOriginY, '',
+                { fontSize: '32px', fill: '#EEE' });
+            tbs[1] = this._game.add.text(16, Config.castOriginY + 40, '',
+                { fontSize: '32px', fill: '#EEE' });
+            tbs[2] = this._game.add.text(16, Config.castOriginY + 80, '',
+                { fontSize: '32px', fill: '#EEE' });
             for (name in this._castMans) {
-                this._castMans[name].textBox = t;
+                this._castMans[name].textBoxes = tbs;
             }
             
             this._currentIndexOfLine = 0;
@@ -413,6 +459,12 @@ namespace Game {
             } else {
                 this._game.debug.text('game is over', 16, Config.worldHeight-16, '#EEE');
             }        
+        }
+        
+        jumpToLine(lbl:string) {
+            let idx = this._scenario.getLineIndex(lbl);
+            this._currentIndexOfLine = idx;
+            this._isWaiting = false;
         }
         
         private _evaluateCommand(ln:_B.Line)
