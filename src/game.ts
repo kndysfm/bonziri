@@ -11,6 +11,9 @@ namespace Game {
         static worldHeight:number = 600;
         static castOriginX:number = 400;
         static castOriginY:number = 450;
+        static fontSizeScript:any = '32px';
+        static textColorNormal:any = '#EEE';
+        static textColorActive:any = '#F84';
     }
     
     interface _SpriteSet{
@@ -174,12 +177,22 @@ namespace Game {
                 this.textBoxes[i].text = '';
                 this.textBoxes[i].inputEnabled = false;
                 this.textBoxes[i].events.onInputUp.removeAll();
+                this.textBoxes[i].events.onInputOver.removeAll();
+                this.textBoxes[i].events.onInputOut.removeAll();
             }
             this._showingLink = false;
         }
         
         private _genJumpListener(label:string):Function {
             return ()=>this._director.jumpToLine(label);
+        }
+        
+        private _genOverListener(that:_P.Text):Function {
+            return ()=>(that.fill = Config.textColorActive);
+        }
+        
+        private _genOutListener(that:_P.Text):Function {
+            return ()=> (that.fill = Config.textColorNormal);
         }
         
         private _speak(cap:_B.Caption) {
@@ -196,10 +209,14 @@ namespace Game {
                             text[i] = link.text;
                             if (i >= this.textBoxes.length) {
                                 throw `out of index of textBoxes`;
+                            } else {
+                                let tb = this.textBoxes[i];
+                                tb.inputEnabled = true;
+                                tb.events.onInputOver.add(this._genOverListener(tb));
+                                tb.events.onInputOut.add(this._genOutListener(tb));
+                                tb.events.onInputUp.add(this._genJumpListener(link.line_label));
+                                this._showingLink = true;
                             }
-                            this.textBoxes[i].inputEnabled = true;
-                            this.textBoxes[i].events.onInputUp.add(this._genJumpListener(link.line_label));
-                            this._showingLink = true;
                         }
                     }
                 } else if (typeof cap.text === 'string') {
@@ -337,7 +354,6 @@ namespace Game {
                     break;
                 case _B.LineTarget._SOUND_:
                     for (let i = 0; i < l.sounds.length; i++) {
-                        this._cast
                         this._playSound(l.action, l.sounds[i]);
                     }
                     break;
@@ -423,11 +439,11 @@ namespace Game {
             // give text-box to display text
             let tbs : _P.Text[] = [];
             tbs[0] = this._game.add.text(16, Config.castOriginY, '',
-                { fontSize: '32px', fill: '#EEE' });
+                { fontSize: Config.fontSizeScript, fill: Config.textColorNormal });
             tbs[1] = this._game.add.text(16, Config.castOriginY + 40, '',
-                { fontSize: '32px', fill: '#EEE' });
+                { fontSize: Config.fontSizeScript, fill: Config.textColorNormal });
             tbs[2] = this._game.add.text(16, Config.castOriginY + 80, '',
-                { fontSize: '32px', fill: '#EEE' });
+                { fontSize: Config.fontSizeScript, fill: Config.textColorNormal });
             for (name in this._castMans) {
                 this._castMans[name].textBoxes = tbs;
             }
