@@ -554,6 +554,16 @@ namespace Bonziri {
 			
 			private _obj: any;
 			private _lineIndex: {[label:string]: number}
+			
+			private _genLinkLabelCheck(that:Scenario, idx:number) {
+				return (lt:LinkText) => {
+					if (lt.line_label) {
+						if (!(lt.line_label in that._lineIndex)) {
+							throw `[Line:${idx}] label "${lt.line_label}" cannot be found`;
+						}
+					}
+				}; 
+			}
 	
 			constructor(jsonText: string) {
 				this._obj = JSON.parse(jsonText);
@@ -631,6 +641,22 @@ namespace Bonziri {
 						let l = new Line(idx, ls[idx], this);
 						this.lines.push(l);
 						this._lineIndex[l.label] = idx;
+					}
+					// validate link label
+					for (let idx = 0; idx < this.lines.length; idx += 1) {
+						let l = this.lines[idx];
+						if (l.caption && l.caption.text) {
+							let lt = <LinkText> l.caption.text;
+							let checker = this._genLinkLabelCheck(this, idx);
+							if (Is.arr(l.caption.text)) {
+								let lts = <LinkText[]> l.caption.text;
+								for (let idx = 0; idx < lts.length; idx += 1) {
+									checker(lts[idx]);
+								}
+							} else {
+								checker(lt);
+							}
+						}
 					}
 				} else throw `define 'lines'`;
 			}
