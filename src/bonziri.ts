@@ -4,7 +4,12 @@
 namespace Bonziri {
 
     export function generateScenario(jsonText: string): Scenario {
-        return Impl.generateScenario(jsonText);
+        try {
+            return Impl.generateScenario(jsonText);
+        } catch (e) {
+            alert(e);
+            throw e;
+        }
     }
 
 }
