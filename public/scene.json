@@ -94,11 +94,23 @@
 	},
 		
 	"lines": [
+		{ "label": "start1",
+			"cast": "_SCENE_", "action": "SHOW", "target": "_GROUP_"},
+		[ "_SCENE_", [
+				"Start?", 
+				["Yes!", "start2"],
+				["No!", "start1"] ] ],
+		[["start2"]],
+		
+		{ "cast": "_SCENE_", "caption": "BGM鳴らす",
+			"action": "SOUND_PLAY", "target": "_SOUND_", "sounds": [0]},
+		{ "cast": "_SCENE_", "caption": "BGM止める",
+			"action": "SOUND_STOP", "target": "_SOUND_", "sounds": [0]},
+		
 		{ "cast": "_SCENE_", "caption": {
 			"name": "Unknown", "speed": 10, 
 			"text": "_SCENE_ は背景画像とか、BGMとか、地の文とか"}},
-		{ "label": "start",
-			"cast": "_SCENE_", "action": "SHOW", "target": "_GROUP_"},
+
 		["_SCENE_", ["背景画像を表示"]],
 		{ "cast": "_SCENE_", "action": "SHOW", "target": "_SPRITE_",
 			"sprites":[0]},
@@ -134,7 +146,7 @@
 		{"label": "loop1"},
 		{ "cast": "A", "caption": {
 			"text": [
-				"指定行へのジャンプも可能(にしたい)", 
+				"指定行へのジャンプも可能", 
 				["戻る", "loop1"],
 				["進む", "break1"] ] } },
 		{"label": "break1"},
@@ -142,8 +154,8 @@
 		[["loop2"]],
 		[ "A", [
 				"ラベルのみの行の簡易表記", 
-				["Yes!", "loop2"],
-				["No!", "break2"] ] ],
+				["戻る", "loop2"],
+				["進む", "break2"] ] ],
 		[["break2"]],
 		
 		[ "A", {"tween": {"to": {"x":400, "alpha": 0}, "duration": 2000}}],
