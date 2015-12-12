@@ -7,8 +7,8 @@ namespace Bonziri {
         try {
             return Impl.generateScenario(jsonText);
         } catch (e) {
-            alert(e);
-            throw e;
+            let msg = 'JSON scenario decoding error:\r\n' + e;
+            alert(msg);
         }
     }
 

@@ -3,15 +3,15 @@
 /// <reference path="lib/vue.d.ts" />
 //'use strict'
 
-var jsonText = ""
+var jsonText = "";
 
 function JsonRequestListener () {
     let txt: string = this.responseText;
-    
-    let d = new Game.Director('gameContent', Bonziri.generateScenario(txt));
-    
     let el:JQuery = $('#inputText');
     el.val(txt);
+
+    new Game.Director('gameContent', Bonziri.generateScenario(txt));
+    
     el.width( $('#gameContent').width() );
     el.height ( window.innerHeight );
 }
@@ -23,5 +23,10 @@ window.onload = () => {
     request.onload = JsonRequestListener;
     request.open("get", "./scene.json", true);
     request.send();
-
 };
+
+function reloadText() {
+    $('#gameContent').children().remove();
+    let el:JQuery = $('#inputText');
+    new Game.Director('gameContent', Bonziri.generateScenario(el.val()));
+}
