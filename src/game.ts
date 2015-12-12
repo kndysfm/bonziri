@@ -91,6 +91,7 @@ namespace Game {
         private _tween:_P.Tween;
         
         public textBoxes: _P.Text[];
+        public nameBox: _P.Text;
         private _showingLink:boolean = false;
         
         constructor(d: Director, g: _P.Game, s: _B.Scenario, c:_B.Cast) {
@@ -175,15 +176,20 @@ namespace Game {
         }
         
         private _resetTextBoxes() {
+            let tb: _P.Text;
             for (let i = 0; i < this.textBoxes.length; i++) {
-                let tb = this.textBoxes[i];
+                tb = this.textBoxes[i];
                 tb.text = '';
                 tb.fill = Config.textColorNormal;
                 tb.inputEnabled = false;
                 tb.events.onInputUp.removeAll();
                 tb.events.onInputOver.removeAll();
                 tb.events.onInputOut.removeAll();
-            }
+                }
+            tb = this.nameBox;
+            tb.text = '';
+            tb.fill = Config.textColorNormal;
+            tb.inputEnabled = false;
             this._showingLink = false;
         }
         
@@ -202,6 +208,10 @@ namespace Game {
         private _speak(l:_B.Line) {
             let cap = l.caption;
             if (cap && cap.text) {
+                if (cap.name) {
+                    this.nameBox.text = cap.name;
+                }
+                
                 let text: string[] = [];
                 if (Array.isArray(cap.text)) {
                     let arr = <(string|_B.LinkText)[]>cap.text;
@@ -443,18 +453,23 @@ namespace Game {
                 this._castMans[c.label] = man;
             }
             // give text-box to display text
+            let tg = this._game.add.group(this._game, 'text boxes', true);
             let tbs : _P.Text[] = [];
             tbs[0] = this._game.add.text(
                 Config.textBoxSize, Config.castOriginY, '',
-                { fontSize: Config.fontSizeScript, fill: Config.textColorNormal });
+                { fontSize: Config.fontSizeScript, fill: Config.textColorNormal }, tg);
             tbs[1] = this._game.add.text(
                 Config.textBoxSize, Config.castOriginY + Config.textBoxHeight, '',
-                { fontSize: Config.fontSizeScript, fill: Config.textColorNormal });
+                { fontSize: Config.fontSizeScript, fill: Config.textColorNormal }, tg);
             tbs[2] = this._game.add.text(
                 Config.textBoxSize, Config.castOriginY + Config.textBoxHeight*2, '',
-                { fontSize: Config.fontSizeScript, fill: Config.textColorNormal });
+                { fontSize: Config.fontSizeScript, fill: Config.textColorNormal }, tg);
+            let nb: _P.Text = this._game.add.text(
+                Config.textBoxSize, Config.castOriginY - Config.textBoxHeight, '',
+                { fontSize: Config.fontSizeScript, fill: Config.textColorNormal }, tg);
             for (name in this._castMans) {
                 this._castMans[name].textBoxes = tbs;
+                this._castMans[name].nameBox = nb;
             }
             
             this._currentIndexOfLine = 0;
