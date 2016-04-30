@@ -1,7 +1,7 @@
 #Bonziri
 Bonziri is a generator of the interactive animation like a visual novel game.
 A script written in JSON format is interpreted as a scenario of game.
-This library is constracted on the Phaser( https://github.com/photonstorm/phaser ),HTML5 game framework.
+This library depends on the Phaser( https://github.com/photonstorm/phaser ), HTML5 game framework.
 
 #ぼんじり
 ぼんじり はHTML5ゲーム用フレームワークPhaser( https://github.com/photonstorm/phaser )上で動くノベルゲームエンジンです。
