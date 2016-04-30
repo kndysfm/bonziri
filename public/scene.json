@@ -97,14 +97,14 @@
 		{ "label": "start1",
 			"cast": "_SCENE_", "action": "SHOW", "target": "_GROUP_"},
 		[ "_SCENE_", [
-				"Start?", 
+				"あいうえおかきくけこさしすせそたちつてとなにぬねの", 
 				["Yes!", "start2"],
 				["No!", "start1"] ] ],
 		[["start2"]],
 		
-		{ "cast": "_SCENE_", "caption": "BGM鳴らす",
+		{ "cast": "_SCENE_", "caption": "BGM鳴らすので注意",
 			"action": "SOUND_PLAY", "target": "_SOUND_", "sounds": [0]},
-		{ "cast": "_SCENE_", "caption": "BGM止める",
+		{ "cast": "_SCENE_", "caption": "BGM止める(うるさいから)",
 			"action": "SOUND_STOP", "target": "_SOUND_", "sounds": [0]},
 		
 		{ "cast": "_SCENE_", "caption": {
@@ -123,28 +123,28 @@
 		"cast Aがフェードイン",
 		{ "cast": "A", "action": "SHOW", "target": "_SPRITE_", "sprites":[0, 1]},
 		[ "A", {"set": {"x": -200}}],
-		{ "label": "A fade in", "cast": "A", "action": "FADE_IN"},
+		{ "label": "A fade in", "cast": "A", "action": "FADE_IN", "caption": {"text": "こんちわ"}},
 		"即フェードアウト",
 		[ "A", "FADE_OUT"],
 		"一旦非表示",
 		[ "A", "HIDE"],
 		
-		"さらに別のcastを表示",
+		["_SCENE_", ["さらに別のcastを表示"]],
 		{ "cast": "B", "action": "SHOW", "target": "_SPRITE_", "sprites":0},
 		[ "B", {"set": {"x": 200}}],
-		{ "cast": "B", "action": {"set": {"visible": true}, "tween": {"to": {"alpha": 1}}}},
+		{ "cast": "B", "action": {"set": {"visible": true}, "tween": {"to": {"alpha": 1}}}, "caption": {"text": "こんちわ"}},
 		
 		"もっかい表示",
 		[ "A", "SHOW"],
 		{ "cast": "A", "caption": {
 			"name": "Unknown", "speed": 10, 
 			"text": "テキスト表示方法(1)"}},
-		{ "cast": "A", "caption": "テキスト表示方法(2)" },
-		[ "A", ["テキスト表示方法(3)", "Arrayをつかって", "表示させます"]],
+		{ "cast": "B", "caption": "テキスト表示方法(2)" },
+		[ "B", ["テキスト表示方法(3)", "Arrayをつかって", "表示させます"]],
 		"テキスト表示方法(4)",
 		
 		{"label": "loop1"},
-		{ "cast": "A", "caption": {
+		{ "cast": "_SCENE_", "caption": {
 			"text": [
 				"指定行へのジャンプも可能", 
 				["戻る", "loop1"],
@@ -152,7 +152,7 @@
 		{"label": "break1"},
 		
 		[["loop2"]],
-		[ "A", [
+		[ "_SCENE_", [
 				"ラベルのみの行の簡易表記", 
 				["戻る", "loop2"],
 				["進む", "break2"] ] ],

@@ -578,10 +578,35 @@ var Bonziri;
                         this.lines.push(l);
                         this._lineIndex[l.label] = idx;
                     }
+                    for (var idx = 0; idx < this.lines.length; idx += 1) {
+                        var l = this.lines[idx];
+                        if (l.caption && l.caption.text) {
+                            var lt = l.caption.text;
+                            var checker = this._genLinkLabelCheck(this, idx);
+                            if (Is.arr(l.caption.text)) {
+                                var lts = l.caption.text;
+                                for (var idx_1 = 0; idx_1 < lts.length; idx_1 += 1) {
+                                    checker(lts[idx_1]);
+                                }
+                            }
+                            else {
+                                checker(lt);
+                            }
+                        }
+                    }
                 }
                 else
                     throw "define 'lines'";
             }
+            Scenario.prototype._genLinkLabelCheck = function (that, idx) {
+                return function (lt) {
+                    if (lt.line_label) {
+                        if (!(lt.line_label in that._lineIndex)) {
+                            throw "[Line:" + idx + "] label \"" + lt.line_label + "\" cannot be found";
+                        }
+                    }
+                };
+            };
             Scenario.prototype.getLineIndex = function (label) {
                 return label in this._lineIndex ? this._lineIndex[label] : -1;
             };
@@ -598,7 +623,13 @@ var Bonziri;
 var Bonziri;
 (function (Bonziri) {
     function generateScenario(jsonText) {
-        return Bonziri.Impl.generateScenario(jsonText);
+        try {
+            return Bonziri.Impl.generateScenario(jsonText);
+        }
+        catch (e) {
+            var msg = 'JSON scenario decoding error:\r\n' + e;
+            alert(msg);
+        }
     }
     Bonziri.generateScenario = generateScenario;
 })(Bonziri || (Bonziri = {}));
@@ -616,6 +647,11 @@ var Game;
         Config.worldHeight = 600;
         Config.castOriginX = 400;
         Config.castOriginY = 450;
+        Config.fontSizeScript = '32px';
+        Config.textColorNormal = '#EEE';
+        Config.textColorActive = '#F84';
+        Config.textBoxSize = 16;
+        Config.textBoxHeight = 40;
         return Config;
     })();
     var SpeakPacer = (function () {
@@ -625,24 +661,40 @@ var Game;
             this._position = 0;
             this._message = msg;
             this._charPerFrame = speed / fps;
+            this._currentIndex = 0;
         }
         SpeakPacer.prototype.update = function () {
-            if (this._position < this._message.length)
+            var currText = this._message[this._currentIndex];
+            if (this._position < currText.length) {
                 this._position += this._charPerFrame;
+            }
+            else if (this._currentIndex < this._message.length - 1) {
+                this._currentIndex += 1;
+                this._position = 0;
+            }
         };
         SpeakPacer.prototype.getText = function () {
-            return this._message.slice(0, this._position);
+            var currText = this._message[this._currentIndex];
+            return currText.slice(0, this._position);
         };
         SpeakPacer.prototype.isSpeaking = function () {
-            return this._position < this._message.length;
+            var currText = this._message[this._currentIndex];
+            return this._currentIndex < this._message.length - 1 ||
+                this._position < currText.length;
         };
         SpeakPacer.prototype.reset = function () {
+            this._currentIndex = 0;
             this._position = 0;
+        };
+        SpeakPacer.prototype.getCurrentIndex = function () {
+            return this._currentIndex;
         };
         return SpeakPacer;
     })();
     var CastManager = (function () {
-        function CastManager(g, s, c) {
+        function CastManager(d, g, s, c) {
+            this._showingLink = false;
+            this._director = d;
             this._game = g;
             this._scenario = s;
             this._cast = c;
@@ -679,7 +731,7 @@ var Game;
                 this._sounds[cfg.label] = { config: cfg, sound: snd };
             }
             this._tweening = this._speaking = false;
-            this.textBox = null;
+            this.textBoxes = null;
         }
         CastManager.prototype._genAnimationCallback = function (img) {
             var that = this;
@@ -710,26 +762,69 @@ var Game;
             }
             this._group.destroy();
         };
-        CastManager.prototype._speak = function (cap) {
+        CastManager.prototype._resetTextBoxes = function () {
+            var tb;
+            for (var i = 0; i < this.textBoxes.length; i++) {
+                tb = this.textBoxes[i];
+                tb.text = '';
+                tb.fill = Config.textColorNormal;
+                tb.inputEnabled = false;
+                tb.events.onInputUp.removeAll();
+                tb.events.onInputOver.removeAll();
+                tb.events.onInputOut.removeAll();
+            }
+            tb = this.nameBox;
+            tb.text = '';
+            tb.fill = Config.textColorNormal;
+            tb.inputEnabled = false;
+            this._showingLink = false;
+        };
+        CastManager.prototype._genJumpListener = function (label, idx_current) {
+            var _this = this;
+            return function () { return _this._director.jumpToLine(label, idx_current); };
+        };
+        CastManager.prototype._genOverListener = function (that) {
+            return function () { return (that.fill = Config.textColorActive); };
+        };
+        CastManager.prototype._genOutListener = function (that) {
+            return function () { return (that.fill = Config.textColorNormal); };
+        };
+        CastManager.prototype._speak = function (l) {
+            var cap = l.caption;
             if (cap && cap.text) {
-                var text;
+                if (cap.name) {
+                    this.nameBox.text = cap.name;
+                }
+                var text = [];
                 if (Array.isArray(cap.text)) {
-                    text = '';
                     var arr = cap.text;
+                    var link;
                     for (var i = 0; i < arr.length; i++) {
                         if (typeof arr[i] === 'string') {
-                            text += arr[i] + '\n';
+                            text[i] = arr[i];
                         }
                         else {
-                            text += arr[i].text + '\n';
+                            link = arr[i];
+                            text[i] = link.text;
+                            if (i >= this.textBoxes.length) {
+                                throw "out of index of textBoxes";
+                            }
+                            else {
+                                var tb = this.textBoxes[i];
+                                tb.inputEnabled = true;
+                                tb.events.onInputOver.add(this._genOverListener(tb));
+                                tb.events.onInputOut.add(this._genOutListener(tb));
+                                tb.events.onInputUp.add(this._genJumpListener(link.line_label, l.index));
+                                this._showingLink = true;
+                            }
                         }
                     }
                 }
                 else if (typeof cap.text === 'string') {
-                    text = cap.text;
+                    text[0] = cap.text;
                 }
                 else {
-                    text = cap.text.text;
+                    text[0] = cap.text.text;
                 }
                 this._pacer = new SpeakPacer(text, cap.speed, this._game.time.desiredFps);
             }
@@ -743,13 +838,14 @@ var Game;
                 if (this._game.input.activePointer.isDown) {
                     this._pacer.update();
                 }
-                if (this.textBox) {
-                    this.textBox.text = this._pacer.getText();
+                var idx = this._pacer.getCurrentIndex();
+                if (this.textBoxes && idx < this.textBoxes.length) {
+                    this.textBoxes[idx].text = this._pacer.getText();
                 }
                 return true;
             }
             else {
-                return !this._game.input.activePointer.isDown;
+                return this._showingLink || !this._game.input.activePointer.isDown;
             }
         };
         CastManager.prototype._updateTween = function () {
@@ -852,13 +948,13 @@ var Game;
                         break;
                     case _B.LineTarget._SOUND_:
                         for (var i = 0; i < l.sounds.length; i++) {
-                            this._cast;
                             this._playSound(l.action, l.sounds[i]);
                         }
                         break;
                 }
             }
-            this._speak(l.caption);
+            this._resetTextBoxes();
+            this._speak(l);
         };
         CastManager.prototype.update = function () {
             if (this._tweening) {
@@ -908,12 +1004,18 @@ var Game;
             var casts = this._scenario.casts;
             for (var l_1 in casts) {
                 var c = casts[l_1];
-                var man = new CastManager(this._game, this._scenario, c);
+                var man = new CastManager(this, this._game, this._scenario, c);
                 this._castMans[c.label] = man;
             }
-            var t = this._game.add.text(16, Config.castOriginY, '', { fontSize: '32px', fill: '#EEE' });
+            var tg = this._game.add.group(this._game, 'text boxes', true);
+            var tbs = [];
+            tbs[0] = this._game.add.text(Config.textBoxSize, Config.castOriginY, '', { fontSize: Config.fontSizeScript, fill: Config.textColorNormal }, tg);
+            tbs[1] = this._game.add.text(Config.textBoxSize, Config.castOriginY + Config.textBoxHeight, '', { fontSize: Config.fontSizeScript, fill: Config.textColorNormal }, tg);
+            tbs[2] = this._game.add.text(Config.textBoxSize, Config.castOriginY + Config.textBoxHeight * 2, '', { fontSize: Config.fontSizeScript, fill: Config.textColorNormal }, tg);
+            var nb = this._game.add.text(Config.textBoxSize, Config.castOriginY - Config.textBoxHeight, '', { fontSize: Config.fontSizeScript, fill: Config.textColorNormal }, tg);
             for (name in this._castMans) {
-                this._castMans[name].textBox = t;
+                this._castMans[name].textBoxes = tbs;
+                this._castMans[name].nameBox = nb;
             }
             this._currentIndexOfLine = 0;
             var l = this._scenario.lines[this._currentIndexOfLine];
@@ -941,6 +1043,11 @@ var Game;
             else {
                 this._game.debug.text('game is over', 16, Config.worldHeight - 16, '#EEE');
             }
+        };
+        Director.prototype.jumpToLine = function (lbl, idx_current) {
+            var idx = this._scenario.getLineIndex(lbl);
+            this._currentIndexOfLine = idx >= 0 ? idx : idx_current;
+            this._isWaiting = false;
         };
         Director.prototype._evaluateCommand = function (ln) {
             this._currentCastName = ln.cast.label;
@@ -977,9 +1084,9 @@ var Game;
 var jsonText = "";
 function JsonRequestListener() {
     var txt = this.responseText;
-    var d = new Game.Director('gameContent', Bonziri.generateScenario(txt));
     var el = $('#inputText');
     el.val(txt);
+    new Game.Director('gameContent', Bonziri.generateScenario(txt));
     el.width($('#gameContent').width());
     el.height(window.innerHeight);
 }
@@ -990,4 +1097,9 @@ window.onload = function () {
     request.open("get", "./scene.json", true);
     request.send();
 };
+function reloadText() {
+    $('#gameContent').children().remove();
+    var el = $('#inputText');
+    new Game.Director('gameContent', Bonziri.generateScenario(el.val()));
+}
 //# sourceMappingURL=app.js.map
